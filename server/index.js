@@ -1,5 +1,5 @@
 const http = require('http');
-const WebSocketServer = require('ws');
+const { WebSocketServer } = require('ws');
 
 const url = require('url');
 const uuidv4 = require('uuid').v4
@@ -8,8 +8,8 @@ const port = 3000;
 const server = http.createServer();
 const wsServer = new WebSocketServer({ server })
 
-const connections = []
-const users = []
+const connections = { }
+const users = { }
 
 const broadcast = () => {
   Object.keys(connections).forEach(uuid => {
@@ -24,9 +24,14 @@ const handleMessage = (bytes, uuid) => {
   const user = users[uuid]
   user.state = message
 
+  broadcast()
+
+  console.log(`${user.username} updated their state: ${JSON.stringify(user.state)}`)
 }
 
 const handleClose = uuid => {
+
+  console.log(`${users[uuid].username} disconnected.`)
   delete connections[uuid]
   delete users[uuid]
 
@@ -35,8 +40,10 @@ const handleClose = uuid => {
 
 wsServer.on("connection", ( connection, request ) => {
 
-  const { username } = url.parse(request, true).query
+  const { username } = url.parse(request.url, true).query
   const uuid = uuidv4()
+  console.log(username)
+  console.log(uuid)
 
   connections[uuid] = connection
 
@@ -52,5 +59,5 @@ wsServer.on("connection", ( connection, request ) => {
 
 
 server.listen(port, () => {
-  console.log(`server is lestening on port ${port}`)
+  console.log(`server is listening on port ${port}`)
 })
